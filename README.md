@@ -9,6 +9,8 @@ tsconfig.json 配置的中文翻译，参照 https://www.typescriptlang.org/v2/e
 - [module](#module)
 - [strictNullChecks](#strictNullChecks)
 - [strictFunctionTypes](#strictFunctionTypes)
+- [esModuleInterop](#esModuleInterop)
+- [allowSyntheticDefaultImports](#allowSyntheticDefaultImports)
 
 ## Module Resolution 模块化解析
 
@@ -155,6 +157,37 @@ ES2020 输出
 import { valueOfPi } from "./constants";
 export const twoPi = valueOfPi * 2;
 ```
+
+### **allowSyntheticDefaultImports**
+
+当有些模块类库并没有指定一个默认导出的时候，开启这个选项可以让你写这样的代码：
+```ts
+import React from 'react'
+```
+而不是这样的代码：
+```ts
+import * as React from 'react'
+```
+
+这个选项并不会影响ts编译出的js内容，只是用来做类型检查。这个选项可以让 ts 保持和 babel 一样，那就是在使用一个模块的默认导出时能更符合人类思维直觉。
+
+注：翻译无能...
+
+### **esModuleInterop**
+
+开启这个选项 ts 会通过给所有导入的对象创建命名空间来增加 commonjs 和 esModule 之间互操作性。对于 esModule 来说，如果要使用 `import React from 'react'` 导入，那么就必须要有一个 `export default` 导出，这点 ts 跟 esModule 是保持统一的的。但是 commonjs 没有默认导出(`default`属性）这个概念，导出的所有东西都是 `module.exports` 这个对象。所以如果不开启 `esModuleInterop` 这个属性，下面的代码是无法运行的[1]。
+```ts
+// commonjs 文件 a.js
+module.exports = {
+  xxx: 123
+}
+// esModule b.ts
+import xxx from 'a.ts' // 根本就没有 default 对象让你可以 import 进来
+```
+打开这个选项同样会打开 `allowSyntheticDefaultImports` 
+
+注：[1]在实践的时候发现这个代码还报错 `ts2306 isnt a module`，哎
+
 
 ## Strict Checks 严格检查
 
