@@ -7,6 +7,8 @@ tsconfig.json 配置的中文翻译，参照 https://www.typescriptlang.org/v2/e
 - [types](#types)
 - [target](#target)
 - [module](#module)
+- [strictNullChecks](#strictNullChecks)
+- [strictFunctionTypes](#strictFunctionTypes)
 
 ## Module Resolution 模块化解析
 
@@ -154,6 +156,79 @@ import { valueOfPi } from "./constants";
 export const twoPi = valueOfPi * 2;
 ```
 
+## Strict Checks 严格检查
 
+### **strictNullChecks**
 
+当 `strictNullChecks` 设置成 `false` 时，可以将 `null` 和 `undefined` 赋值给精准的类型。比如 
+```ts
+let a:string = 'hello'
+a = null
+```
 
+如果设置为 `true`，`null` 和 `undefined` 都有各自的类型而且不能被赋值给精准的类型，比如 `string`，只能 `null` 型赋值给 `null` 型，`undefined` 同理。
+
+官网的例子：
+```ts
+declare const loggedInUsername: string;
+
+const users = [
+  { name: "Oby", age: 12 },
+  { name: "Heera", age: 32 },
+];
+
+const loggedInUser = users.find((u) => u.name === loggedInUsername);
+console.log(loggedInUser.age); // 这里会报错
+// loggedInUser 有可能是 undefined，是不能赋值给精准的类型 User 的 
+```
+
+### **strictFunctionTypes**
+
+开启这个选项后，函数的参数校验会更精确，参数不兼容的函数不能互相赋值。比如：
+```ts
+// 不开启检查
+function fn(x: string) {
+  console.log("Hello, " + x.toLowerCase());
+}
+
+type StringOrNumberFunc = (ns: string | number) => void;
+
+// 不安全的赋值
+let func: StringOrNumberFunc = fn;
+// 不安全的函数调用，会导致错误，number 没有 toLowerCase() 方法
+func(10);
+```
+开启严格检查后，会提示错误。
+```ts
+function fn(x: string) {
+  console.log("Hello, " + x.toLowerCase());
+}
+
+type StringOrNumberFunc = (ns: string | number) => void;
+
+// 不安全的赋值被阻止了，提示错误
+let func: StringOrNumberFunc = fn;
+// Type '(x: string) => void' is not assignable to type 'StringOrNumberFunc'.
+//   Types of parameters 'x' and 'ns' are incompatible.
+//     Type 'string | number' is not assignable to type 'string'.
+//       Type 'number' is not assignable to type 'string'.
+```
+
+注：ts 团队在开发这个函数检查功能时发现历史遗留很多不安全的类继承关系，甚至有些 DOM 元素上也存在问题。因此，`strictFunctionTypes` 检查只会适用于 function syntax 写的函数，而不是 method syntax 写的函数.(这句话不知道怎么翻译，原文是 Because of this, the setting only applies to functions written in function syntax, not to those in method syntax)
+
+如下是例子：
+```ts
+type Methodish = {
+  func(x: string | number): void;
+};
+
+function fn(x: string) {
+  console.log("Hello, " + x.toLowerCase());
+}
+
+// 仍旧是不安全的赋值，但是不会被检测到
+const m: Methodish = {
+  func: fn,
+};
+m.func(10);
+```
